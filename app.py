@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 def update_data(url="https://github.com/CSSEGISandData/COVID-19.git"):
     
+    print(os.system("pwd"))
     if not os.path.exists("timeseries"):
         os.makedirs("timeseries")
         os.system("git clone %s timeseries" % url)
