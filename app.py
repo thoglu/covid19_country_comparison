@@ -198,8 +198,8 @@ def get_new_data_every(period=40000):
         load_data()
         print("data updated")
         time.sleep(period)
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 server = app.server
 
 if __name__ == '__main__':
