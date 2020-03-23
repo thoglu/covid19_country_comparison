@@ -202,6 +202,308 @@ def get_new_data_every(period=40000):
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 server = app.server
 
+glob_last_best=0
+glob_last_worst=0
+
+glob_last_best_spread=0
+glob_last_worst_spread=0
+
+app_colors = {
+'background': 'white',
+'text': 'black'
+}   
+dropdown_data=[]
+for k in sorted(global_data.keys()):
+    dropdown_data.append({"label": k+" days to double ~ %.1f" % (global_data[k]["days_to_double"]), "value": k})
+
+app.layout = html.Div( style={"max-width": 800}, children=[
+    html.H1(children='Covid-19 visualization', style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    }),
+    html.H5(children='Select countries to compare *total currently active* and *daily new* cases.',style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    }),
+    html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s.' % (last_date.month, last_date.day, last_date.year),style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    }),
+    html.Hr(),
+    html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days is an indication of reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures)',style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    }),
+    html.Div(style={
+        'textAlign': 'center'}, children=[html.Strong(children='Comment: We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A possible explanation (guess, I am not an expert): Face masks (even if it only reduces transmission by 50%) have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    })]),
+    html.Hr(),
+    html.P(children='Countries with most relaxed and critical situations based on doubling time (tot number of cases > 500)  or current per-100k people spread of the disease.',style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    }),
+
+    html.Div(children=[html.Div(style={'textAlign': 'center'}, children=[html.Button('Show 5 best (doubling)', id='button_best'),
+html.Button('Show 5 worst (doubling)', id='button_worst'), html.Button('Show 5 best (spread)', id='button_best_spread'), html.Button('Show 5 worst (spread)', id='button_worst_spread')]),
+        dcc.Dropdown(
+    id="dropdown_selection",
+    options=dropdown_data,
+    value=["Germany"],
+    multi=True
+),
+dcc.Checklist(
+id="checkpoints",
+options=[
+    {'label': 'logarithmic y-axis', 'value': 'log'},
+    {'label': 'show daily new cases', 'value': 'yes'},
+],
+value=['log',"no"]
+) 
+ ]),
+
+    dcc.Graph(
+        id='graph',
+        figure={
+            'data': [
+            ],
+            'layout': {
+                'title': 'Country comparison',
+                'plot_bgcolor': app_colors['background'],
+                'paper_bgcolor': app_colors['background']   
+        }
+    })
+])
+   
+@app.callback(
+Output('dropdown_selection', 'value'),
+[Input('button_best', 'n_clicks'), Input('button_worst', 'n_clicks'),Input('button_best_spread', 'n_clicks'),Input('button_worst_spread', 'n_clicks')])
+def update_selection(show_best_button, show_worst_button, show_best_button_spread, show_worst_button_spread):#
+
+    global glob_last_best
+    global glob_last_worst
+    global glob_last_best_spread
+    global glob_last_worst_spread
+    
+    case_req=400
+    selected_names=None
+
+    if(show_best_button is not None):
+        if(show_best_button > glob_last_best):
+            ## show best button has been pressed
+           
+            names=[]
+            days_to_double=[]
+            cum_cases=[]
+
+            for key in global_data.keys():
+                names.append(key)
+                days_to_double.append(global_data[key]["days_to_double"])
+                cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+
+            days_to_double=numpy.array(days_to_double)
+            names=numpy.array(names)
+            cum_cases=numpy.array(cum_cases)
+
+           
+            sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+
+            sorta=numpy.argsort(days_to_double[sel_mask])
+
+         
+
+            selected_names=names[sel_mask][sorta][-5:][::-1]
+            glob_last_best=show_best_button
+
+
+
+    if(show_worst_button is not None):
+        if(show_worst_button > glob_last_worst):
+            ## show_worst_button has been pressed
+           
+            names=[]
+            mean_r0=[]
+            days_to_double=[]
+            cum_cases=[]
+
+            for key in global_data.keys():
+                names.append(key)
+                days_to_double.append(global_data[key]["days_to_double"])
+                cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+
+            days_to_double=numpy.array(days_to_double)
+            names=numpy.array(names)
+            cum_cases=numpy.array(cum_cases)
+
+            sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+
+            sorta=numpy.argsort(days_to_double[sel_mask])
+
+            selected_names=names[sel_mask][sorta][:5]
+            glob_last_worst=show_worst_button
+
+
+    ## spread
+    if(show_best_button_spread is not None):
+        if(show_best_button_spread > glob_last_best_spread):
+            ## show best button has been pressed
+           
+            names=[]
+            cum_cases=[]
+
+            for key in global_data.keys():
+                names.append(key)
+                cum_cases.append(global_data[key]["active_confirmed"][-1])
+
+            
+            names=numpy.array(names)
+            cum_cases=numpy.array(cum_cases)
+           
+            sorta=numpy.argsort(cum_cases)
+
+            print(len(names),len(sorta))
+            print(names[sorta])
+            selected_names=names[sorta][:5]
+            glob_last_best_spread=show_best_button_spread
+
+    if(show_worst_button_spread is not None):
+        if(show_worst_button_spread > glob_last_worst_spread):
+            ## show_worst_button has been pressed
+           
+            names=[]
+            cum_cases=[]
+
+            for key in global_data.keys():
+                names.append(key)
+                cum_cases.append(global_data[key]["active_confirmed"][-1])
+
+            names=numpy.array(names)
+            cum_cases=numpy.array(cum_cases)
+            sorta=numpy.argsort(cum_cases)
+
+            selected_names=names[sorta][-5:]
+            glob_last_worst_spread=show_worst_button_spread
+    
+
+
+
+    if(selected_names is not None):
+        return selected_names
+        
+    else:
+       
+        if(show_best_button is None and show_worst_button is None and show_best_button_spread is None and show_worst_button_spread is None):
+            return ["China", "Korea, South", "Japan", "Germany", "Italy"]
+
+
+
+
+
+    ##########
+
+            
+
+
+@app.callback(
+Output('graph', 'figure'),
+[Input('dropdown_selection', 'value'), Input('checkpoints', 'value')])
+def update_figure1(selected_input_dropdown, checkpoints_input):#
+    
+    global app_colors
+
+    show_daily_cases=0
+    log_opt="linear"
+    
+    if("log" in checkpoints_input):
+        log_opt="log"
+
+    if("yes" in checkpoints_input):
+        show_daily_cases=1
+
+    data_list=[]
+
+    colors=["red", "green", "blue", "purple", "gray", "brown", "orange", "pink", "black", "yellow"]
+
+    for ind, inp in enumerate(selected_input_dropdown):
+
+        
+
+        data_list.append(dict(
+            x=dates,
+            y=global_data[inp]["active_confirmed"],
+            line=dict(color=colors[ind], width=4
+                          ),
+            name="%s (active) / doubling time: %.1f days" % (inp, global_data[inp]["days_to_double"])
+            ) )
+        if(show_daily_cases):
+            data_list.append(dict(
+                x=dates,
+                y=global_data[inp]["daily_new_confirmed"],
+                line=dict(color=colors[ind], width=4,dash='dash'),
+                
+                name="%s (daily new)" % (inp)
+                ) )
+
+    return {
+        'data': data_list,
+        'layout': dict(
+            xaxis={'title': 'Date'},
+            yaxis={"type": log_opt, 'title': '# per %s population' % str(global_per_population)},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            legend={'x': 0.02, 'y': 0.98},
+            hovermode='closest',
+            title='',
+            plot_bgcolor= app_colors['background'],
+            paper_bgcolor=app_colors['background'],  
+            transition={'duration': 500}
+        )
+    }
+
+"""
+@app.callback(
+Output('graph2', 'figure'),
+[Input('dropdown_selection', 'value'), Input('checkpoints', 'value')])
+def update_figure2(selected_input_dropdown, checkpoints_input):#
+    
+    global app_colors
+
+    log_opt="linear"
+    
+    if("log" in checkpoints_input):
+        log_opt="log"
+
+  
+    data_list=[]
+
+    colors=["red", "green", "blue", "purple", "gray", "brown", "orange", "pink", "black", "yellow"]
+
+    for ind, inp in enumerate(selected_input_dropdown):
+
+        data_list.append(dict(
+            x=dates,
+            y=global_data[inp]["growth_factor"],
+            line=dict(color=colors[ind], width=4
+                          ),
+            name="%s" % (inp)
+            ) )
+       
+    return {
+        'data': data_list,
+        'layout': dict(
+            xaxis={'title': 'Date'},
+            yaxis={"type": log_opt, "title": 'growth factor'},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            legend={'x': 0.02, 'y': 0.98},
+            hovermode='closest',
+            title='',
+            plot_bgcolor= app_colors['background'],
+            paper_bgcolor=app_colors['background'],  
+            transition={'duration': 500}
+        )
+    }
+"""
+
 if __name__ == '__main__':
 
     update_data()
@@ -212,305 +514,5 @@ if __name__ == '__main__':
     executor.submit(get_new_data_every)
 
 
-    glob_last_best=0
-    glob_last_worst=0
-
-    glob_last_best_spread=0
-    glob_last_worst_spread=0
-
-    app_colors = {
-    'background': 'white',
-    'text': 'black'
-    }   
-    dropdown_data=[]
-    for k in sorted(global_data.keys()):
-        dropdown_data.append({"label": k+" days to double ~ %.1f" % (global_data[k]["days_to_double"]), "value": k})
-
-    app.layout = html.Div( style={"max-width": 800}, children=[
-        html.H1(children='Covid-19 visualization', style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        }),
-        html.H5(children='Select countries to compare *total currently active* and *daily new* cases.',style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        }),
-        html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s.' % (last_date.month, last_date.day, last_date.year),style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        }),
-        html.Hr(),
-        html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days is an indication of reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures)',style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        }),
-        html.Div(style={
-            'textAlign': 'center'}, children=[html.Strong(children='Comment: We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A possible explanation (guess, I am not an expert): Face masks (even if it only reduces transmission by 50%) have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        })]),
-        html.Hr(),
-        html.P(children='Countries with most relaxed and critical situations based on doubling time (tot number of cases > 500)  or current per-100k people spread of the disease.',style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        }),
-
-        html.Div(children=[html.Div(style={'textAlign': 'center'}, children=[html.Button('Show 5 best (doubling)', id='button_best'),
-    html.Button('Show 5 worst (doubling)', id='button_worst'), html.Button('Show 5 best (spread)', id='button_best_spread'), html.Button('Show 5 worst (spread)', id='button_worst_spread')]),
-            dcc.Dropdown(
-        id="dropdown_selection",
-        options=dropdown_data,
-        value=["Germany"],
-        multi=True
-    ),
-    dcc.Checklist(
-    id="checkpoints",
-    options=[
-        {'label': 'logarithmic y-axis', 'value': 'log'},
-        {'label': 'show daily new cases', 'value': 'yes'},
-    ],
-    value=['log',"no"]
-    ) 
-     ]),
-
-        dcc.Graph(
-            id='graph',
-            figure={
-                'data': [
-                ],
-                'layout': {
-                    'title': 'Country comparison',
-                    'plot_bgcolor': app_colors['background'],
-                    'paper_bgcolor': app_colors['background']   
-            }
-        })
-    ])
-   
-    @app.callback(
-    Output('dropdown_selection', 'value'),
-    [Input('button_best', 'n_clicks'), Input('button_worst', 'n_clicks'),Input('button_best_spread', 'n_clicks'),Input('button_worst_spread', 'n_clicks')])
-    def update_selection(show_best_button, show_worst_button, show_best_button_spread, show_worst_button_spread):#
-
-        global glob_last_best
-        global glob_last_worst
-        global glob_last_best_spread
-        global glob_last_worst_spread
-        
-        case_req=400
-        selected_names=None
-
-        if(show_best_button is not None):
-            if(show_best_button > glob_last_best):
-                ## show best button has been pressed
-               
-                names=[]
-                days_to_double=[]
-                cum_cases=[]
-
-                for key in global_data.keys():
-                    names.append(key)
-                    days_to_double.append(global_data[key]["days_to_double"])
-                    cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
-
-                days_to_double=numpy.array(days_to_double)
-                names=numpy.array(names)
-                cum_cases=numpy.array(cum_cases)
-
-               
-                sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
-
-                sorta=numpy.argsort(days_to_double[sel_mask])
-
-             
-
-                selected_names=names[sel_mask][sorta][-5:][::-1]
-                glob_last_best=show_best_button
-
-
-
-        if(show_worst_button is not None):
-            if(show_worst_button > glob_last_worst):
-                ## show_worst_button has been pressed
-               
-                names=[]
-                mean_r0=[]
-                days_to_double=[]
-                cum_cases=[]
-
-                for key in global_data.keys():
-                    names.append(key)
-                    days_to_double.append(global_data[key]["days_to_double"])
-                    cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
-
-                days_to_double=numpy.array(days_to_double)
-                names=numpy.array(names)
-                cum_cases=numpy.array(cum_cases)
-
-                sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
-
-                sorta=numpy.argsort(days_to_double[sel_mask])
-
-                selected_names=names[sel_mask][sorta][:5]
-                glob_last_worst=show_worst_button
-
-
-        ## spread
-        if(show_best_button_spread is not None):
-            if(show_best_button_spread > glob_last_best_spread):
-                ## show best button has been pressed
-               
-                names=[]
-                cum_cases=[]
-
-                for key in global_data.keys():
-                    names.append(key)
-                    cum_cases.append(global_data[key]["active_confirmed"][-1])
-
-                
-                names=numpy.array(names)
-                cum_cases=numpy.array(cum_cases)
-               
-                sorta=numpy.argsort(cum_cases)
-
-                print(len(names),len(sorta))
-                print(names[sorta])
-                selected_names=names[sorta][:5]
-                glob_last_best_spread=show_best_button_spread
-
-        if(show_worst_button_spread is not None):
-            if(show_worst_button_spread > glob_last_worst_spread):
-                ## show_worst_button has been pressed
-               
-                names=[]
-                cum_cases=[]
-
-                for key in global_data.keys():
-                    names.append(key)
-                    cum_cases.append(global_data[key]["active_confirmed"][-1])
-
-                names=numpy.array(names)
-                cum_cases=numpy.array(cum_cases)
-                sorta=numpy.argsort(cum_cases)
-
-                selected_names=names[sorta][-5:]
-                glob_last_worst_spread=show_worst_button_spread
-        
-
-
-
-        if(selected_names is not None):
-            return selected_names
-            
-        else:
-           
-            if(show_best_button is None and show_worst_button is None and show_best_button_spread is None and show_worst_button_spread is None):
-                return ["China", "Korea, South", "Japan", "Germany", "Italy"]
-
-
-
-
-
-        ##########
-
-            
-
-
-    @app.callback(
-    Output('graph', 'figure'),
-    [Input('dropdown_selection', 'value'), Input('checkpoints', 'value')])
-    def update_figure1(selected_input_dropdown, checkpoints_input):#
-        
-        global app_colors
     
-        show_daily_cases=0
-        log_opt="linear"
-        
-        if("log" in checkpoints_input):
-            log_opt="log"
-
-        if("yes" in checkpoints_input):
-            show_daily_cases=1
-
-        data_list=[]
-
-        colors=["red", "green", "blue", "purple", "gray", "brown", "orange", "pink", "black", "yellow"]
-
-        for ind, inp in enumerate(selected_input_dropdown):
-
-            
-
-            data_list.append(dict(
-                x=dates,
-                y=global_data[inp]["active_confirmed"],
-                line=dict(color=colors[ind], width=4
-                              ),
-                name="%s (active) / doubling time: %.1f days" % (inp, global_data[inp]["days_to_double"])
-                ) )
-            if(show_daily_cases):
-                data_list.append(dict(
-                    x=dates,
-                    y=global_data[inp]["daily_new_confirmed"],
-                    line=dict(color=colors[ind], width=4,dash='dash'),
-                    
-                    name="%s (daily new)" % (inp)
-                    ) )
-
-        return {
-            'data': data_list,
-            'layout': dict(
-                xaxis={'title': 'Date'},
-                yaxis={"type": log_opt, 'title': '# per %s population' % str(global_per_population)},
-                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                legend={'x': 0.02, 'y': 0.98},
-                hovermode='closest',
-                title='',
-                plot_bgcolor= app_colors['background'],
-                paper_bgcolor=app_colors['background'],  
-                transition={'duration': 500}
-            )
-        }
-
-    """
-    @app.callback(
-    Output('graph2', 'figure'),
-    [Input('dropdown_selection', 'value'), Input('checkpoints', 'value')])
-    def update_figure2(selected_input_dropdown, checkpoints_input):#
-        
-        global app_colors
-    
-        log_opt="linear"
-        
-        if("log" in checkpoints_input):
-            log_opt="log"
-
-      
-        data_list=[]
-
-        colors=["red", "green", "blue", "purple", "gray", "brown", "orange", "pink", "black", "yellow"]
-
-        for ind, inp in enumerate(selected_input_dropdown):
-
-            data_list.append(dict(
-                x=dates,
-                y=global_data[inp]["growth_factor"],
-                line=dict(color=colors[ind], width=4
-                              ),
-                name="%s" % (inp)
-                ) )
-           
-        return {
-            'data': data_list,
-            'layout': dict(
-                xaxis={'title': 'Date'},
-                yaxis={"type": log_opt, "title": 'growth factor'},
-                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                legend={'x': 0.02, 'y': 0.98},
-                hovermode='closest',
-                title='',
-                plot_bgcolor= app_colors['background'],
-                paper_bgcolor=app_colors['background'],  
-                transition={'duration': 500}
-            )
-        }
-    """
     app.run_server(debug=True)
