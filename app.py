@@ -263,7 +263,7 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         'textAlign': 'center',
         'color': app_colors['text']
     }),
-    html.A(href='https://github.com/thoglu/covid19_country_comparison', target="here.",style={
+    html.A(href='https://github.com/thoglu/covid19_country_comparison', children="here.",style={
         'textAlign': 'center',
         'color': app_colors['text']
     }),
