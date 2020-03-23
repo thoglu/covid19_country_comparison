@@ -26,7 +26,7 @@ def update_data(url="https://github.com/CSSEGISandData/COVID-19.git"):
         os.chdir("timeseries")
         os.system("git pull")
         os.chdir("..")
-
+    print("finished update data..")
 ## global variables
 global_per_population=100000.0
 
@@ -34,6 +34,8 @@ global_per_population=100000.0
 global_data=None
 dates=None
 last_date=None
+
+
 ######################
 
 def find_doubling_time(arr):
@@ -185,7 +187,7 @@ def load_data(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_tim
     global_data=all_data
     last_date=dates[-1]
 
-
+    print("finished load data")
     #return all_data, dates
     #print(confirmed.loc[1])
 
@@ -504,15 +506,17 @@ def update_figure2(selected_input_dropdown, checkpoints_input):#
     }
 """
 
+print("global scope")
+update_data()
+load_data()
+
+#global_data, dates=load_data()
+    
+executor = ThreadPoolExecutor(max_workers=1)
+executor.submit(get_new_data_every)
+
 if __name__ == '__main__':
 
-    update_data()
-    load_data()
-    #global_data, dates=load_data()
-    
-    executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(get_new_data_every)
+    print("updating data...")
 
-
-    
     app.run_server(debug=True)
