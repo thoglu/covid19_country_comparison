@@ -251,7 +251,11 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         'textAlign': 'center',
         'color': app_colors['text']
     }),
-    html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s.' % (last_date.month, last_date.day, last_date.year),style={
+    html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s. Code for local app at ' % (last_date.month, last_date.day, last_date.year),style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    }),
+    html.A(href='https://github.com/thoglu/covid19_country_comparison', target="here.",style={
         'textAlign': 'center',
         'color': app_colors['text']
     }),
@@ -261,7 +265,7 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         'color': app_colors['text']
     }),
     html.Div(style={
-        'textAlign': 'center'}, children=[html.Strong(children='Comment: We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A possible explanation (guess, I am not an expert): Face masks (even if it only reduces transmission by 50%) have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
+        'textAlign': 'center'}, children=[html.Strong(children='Comment: We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A guess (I am not an expert): Face masks (even if it only reduces transmission by 50%) have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
         'textAlign': 'center',
         'color': app_colors['text']
     })]),
