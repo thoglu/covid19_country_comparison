@@ -113,16 +113,18 @@ def load_data(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_tim
         this_country=confirmed.loc[ind].values[1]
         
 
-        try:
+        #try:
 
-            cname=this_country
-            if(cname in countryinfo_names.keys()):
-                cname=countryinfo_names[cname]
-            this_country_info=countryinfo.CountryInfo(cname)
-            population=this_country_info.population()
-        except:
-            print("couldnt find country ", this_country, " in countryinfo object..")
-            continue
+        cname=this_country
+        if(cname in countryinfo_names.keys()):
+            cname=countryinfo_names[cname]
+
+        print("CNAME", cname)
+        this_country_info=countryinfo.CountryInfo(cname)
+        population=this_country_info.population()
+        #except:
+        #    print("couldnt find country ", this_country, " in countryinfo object..")
+        #    continue
 
         if(this_country not in all_data.keys()):
             all_data[this_country]=dict()
