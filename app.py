@@ -18,14 +18,16 @@ import countryinfo
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 def update_data(url="https://github.com/CSSEGISandData/COVID-19.git"):
-    if not os.path.exists(".timeseries"):
-        os.makedirs(".timeseries")
-
+    
+    if not os.path.exists("timeseries"):
+        os.makedirs("timeseries")
         os.system("git clone %s timeseries" % url)
     else:
         os.chdir("timeseries")
         os.system("git pull")
         os.chdir("..")
+    
+    
     print("finished update data..")
 ## global variables
 global_per_population=100000.0
@@ -201,6 +203,8 @@ def get_new_data_every(period=40000):
         print("data updated")
         time.sleep(period)
 
+
+print("DASH")
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 server = app.server
 
@@ -214,6 +218,16 @@ app_colors = {
 'background': 'white',
 'text': 'black'
 }   
+
+update_data()
+load_data()
+
+#global_data, dates=load_data()
+    
+executor = ThreadPoolExecutor(max_workers=1)
+executor.submit(get_new_data_every)
+
+
 dropdown_data=[]
 for k in sorted(global_data.keys()):
     dropdown_data.append({"label": k+" days to double ~ %.1f" % (global_data[k]["days_to_double"]), "value": k})
@@ -506,17 +520,10 @@ def update_figure2(selected_input_dropdown, checkpoints_input):#
     }
 """
 
-print("global scope")
-update_data()
-load_data()
 
-#global_data, dates=load_data()
-    
-executor = ThreadPoolExecutor(max_workers=1)
-executor.submit(get_new_data_every)
 
 if __name__ == '__main__':
 
-    print("updating data...")
+    print("before run server...")
 
     app.run_server(debug=True)
