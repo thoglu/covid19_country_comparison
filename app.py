@@ -79,6 +79,7 @@ def load_data(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_tim
     recovered=pd.read_csv(os.path.join(timeseries_folder, "time_series_19-covid-Recovered.csv"))
     died=pd.read_csv(os.path.join(timeseries_folder, "time_series_19-covid-Deaths.csv"))
 
+    print("LOADED CSV files ...", timeseries_folder)
     num_countries=confirmed.shape[0]
 
     region_label=str(confirmed.columns[0])
