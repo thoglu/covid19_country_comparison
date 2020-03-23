@@ -10,7 +10,9 @@ Requirements: pandas, numpy, dash, plotly, countryinfo
 Installation: 
 git clone and run app.py, runs in browser
 
-An online version is running at () and updates the data from the John-Hopkins repository twice a day.
+An online version is running at https://covid19-country-comparison.herokuapp.com/ and updates the data from the John-Hopkins repository twice a day.
+
+<img src="screenshot.png"></img>
 
 
 
