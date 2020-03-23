@@ -244,17 +244,7 @@ if __name__ == '__main__':
             'textAlign': 'center',
             'color': app_colors['text']
         }),
-        html.Div(style={
-            'textAlign': 'center'}, children=[html.Strong(children='We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A possible explanation: Face masks have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        })]),
-        html.Hr(),
-        html.P(children='Countries with most relaxed and critical situations based on doubling time (tot number of cases > 500)  or current per-100k people spread of the disease.',style={
-            'textAlign': 'center',
-            'color': app_colors['text']
-        }),
-
+       
         html.Div(children=[html.Div(style={'textAlign': 'center'}, children=[html.Button('Show 5 best (doubling)', id='button_best'),
     html.Button('Show 5 worst (doubling)', id='button_worst'), html.Button('Show 5 best (spread)', id='button_best_spread'), html.Button('Show 5 worst (spread)', id='button_worst_spread')]),
             dcc.Dropdown(
