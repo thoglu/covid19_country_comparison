@@ -260,10 +260,13 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         'color': app_colors['text']
     }),
     html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s. ' % (last_date.month, last_date.day, last_date.year),style={
-        
+        'textAlign': 'center',
         'color': app_colors['text']
     }),
-    html.Div(children=[
+    html.Div(style={
+        'textAlign': 'center',
+        'color': app_colors['text']
+    },children=[
     html.Div(children='github code',style={
         
         'color': app_colors['text']
