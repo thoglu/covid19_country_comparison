@@ -207,7 +207,7 @@ def load_data(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_tim
 
 # update roughly twice a day
 
-"""
+
 def get_new_data_every(period=40000):
     
     while True:
@@ -217,7 +217,7 @@ def get_new_data_every(period=40000):
         print("data updated")
         time.sleep(period)
 
-"""
+
 
 
 print("DASH")
@@ -242,8 +242,8 @@ load_data()
 
 #global_data, dates=load_data()
     
-#executor = ThreadPoolExecutor(max_workers=1)
-#executor.submit(get_new_data_every)
+executor = ThreadPoolExecutor(max_workers=1)
+executor.submit(get_new_data_every)
 
 
 dropdown_data=[]
