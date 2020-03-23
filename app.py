@@ -263,8 +263,8 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         
         'color': app_colors['text']
     }),
-    tml.Div(children=[
-    tml.Div(children='github code',style={
+    html.Div(children=[
+    html.Div(children='github code',style={
         
         'color': app_colors['text']
     }),
