@@ -225,8 +225,8 @@ load_data()
 
 #global_data, dates=load_data()
     
-executor = ThreadPoolExecutor(max_workers=1)
-executor.submit(get_new_data_every)
+#executor = ThreadPoolExecutor(max_workers=1)
+#executor.submit(get_new_data_every)
 
 
 dropdown_data=[]
