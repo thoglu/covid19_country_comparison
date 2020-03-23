@@ -320,127 +320,147 @@ value=['log',"no"]
    
 @app.callback(
 Output('dropdown_selection', 'value'),
-[Input('button_best', 'n_clicks'), Input('button_worst', 'n_clicks'),Input('button_best_spread', 'n_clicks'),Input('button_worst_spread', 'n_clicks')])
+[Input('button_best', 'n_clicks_timestamp'), Input('button_worst', 'n_clicks_timestamp'),Input('button_best_spread', 'n_clicks_timestamp'),Input('button_worst_spread', 'n_clicks_timestamp')])
 def update_selection(show_best_button, show_worst_button, show_best_button_spread, show_worst_button_spread):#
 
-    global glob_last_best
-    global glob_last_worst
-    global glob_last_best_spread
-    global glob_last_worst_spread
+    #global glob_last_best
+    #global glob_last_worst
+    #global glob_last_best_spread
+    #global glob_last_worst_spread
+
+    max_time=-9999999999
+    max_index=-1
+
+    #1st button
+    if(show_best_button is not None):
+        if(show_best_button>max_time):
+            max_time=show_best_button
+            max_index=0
     
+    # 2nd button
+    if(show_worst_button is not None):
+        if(show_worst_button>max_time):
+            max_time=show_worst_button
+            max_index=1
+
+    # 2nd button
+    if(show_best_button_spread is not None):
+        if(show_best_button_spread>max_time):
+            max_time=show_best_button_spread
+            max_index=2
+
+    # 3rd button
+    if(show_worst_button_spread is not None):
+        if(show_worst_button_spread>max_time):
+            max_time=show_worst_button_spread
+            max_index=3
+    
+    if(max_index==-1):
+        # default at loading
+        return ["China", "Korea, South", "Japan", "Germany", "Italy"]
+
     case_req=400
     selected_names=None
 
-    if(show_best_button is not None):
-        if(show_best_button > glob_last_best):
-            ## show best button has been pressed
-           
-            names=[]
-            days_to_double=[]
-            cum_cases=[]
+    if(max_index==0):
+    
+        ## show best button has been pressed
+       
+        names=[]
+        days_to_double=[]
+        cum_cases=[]
 
-            for key in global_data.keys():
-                names.append(key)
-                days_to_double.append(global_data[key]["days_to_double"])
-                cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+        for key in global_data.keys():
+            names.append(key)
+            days_to_double.append(global_data[key]["days_to_double"])
+            cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
 
-            days_to_double=numpy.array(days_to_double)
-            names=numpy.array(names)
-            cum_cases=numpy.array(cum_cases)
+        days_to_double=numpy.array(days_to_double)
+        names=numpy.array(names)
+        cum_cases=numpy.array(cum_cases)
 
-           
-            sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+       
+        sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
 
-            sorta=numpy.argsort(days_to_double[sel_mask])
+        sorta=numpy.argsort(days_to_double[sel_mask])
 
-         
+     
 
-            selected_names=names[sel_mask][sorta][-5:][::-1]
-            glob_last_best=show_best_button
+        selected_names=names[sel_mask][sorta][-5:][::-1]
+        glob_last_best=show_best_button
 
 
 
-    if(show_worst_button is not None):
-        if(show_worst_button > glob_last_worst):
-            ## show_worst_button has been pressed
-           
-            names=[]
-            mean_r0=[]
-            days_to_double=[]
-            cum_cases=[]
+    if(max_index==1):
+    
+        ## show_worst_button has been pressed
+       
+        names=[]
+        mean_r0=[]
+        days_to_double=[]
+        cum_cases=[]
 
-            for key in global_data.keys():
-                names.append(key)
-                days_to_double.append(global_data[key]["days_to_double"])
-                cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+        for key in global_data.keys():
+            names.append(key)
+            days_to_double.append(global_data[key]["days_to_double"])
+            cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
 
-            days_to_double=numpy.array(days_to_double)
-            names=numpy.array(names)
-            cum_cases=numpy.array(cum_cases)
+        days_to_double=numpy.array(days_to_double)
+        names=numpy.array(names)
+        cum_cases=numpy.array(cum_cases)
 
-            sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+        sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
 
-            sorta=numpy.argsort(days_to_double[sel_mask])
+        sorta=numpy.argsort(days_to_double[sel_mask])
 
-            selected_names=names[sel_mask][sorta][:5]
-            glob_last_worst=show_worst_button
+        selected_names=names[sel_mask][sorta][:5]
+        glob_last_worst=show_worst_button
 
 
     ## spread
-    if(show_best_button_spread is not None):
-        if(show_best_button_spread > glob_last_best_spread):
-            ## show best button has been pressed
-           
-            names=[]
-            cum_cases=[]
-
-            for key in global_data.keys():
-                names.append(key)
-                cum_cases.append(global_data[key]["active_confirmed"][-1])
-
-            
-            names=numpy.array(names)
-            cum_cases=numpy.array(cum_cases)
-           
-            sorta=numpy.argsort(cum_cases)
-
-            print(len(names),len(sorta))
-            print(names[sorta])
-            selected_names=names[sorta][:5]
-            glob_last_best_spread=show_best_button_spread
-
-    if(show_worst_button_spread is not None):
-        if(show_worst_button_spread > glob_last_worst_spread):
-            ## show_worst_button has been pressed
-           
-            names=[]
-            cum_cases=[]
-
-            for key in global_data.keys():
-                names.append(key)
-                cum_cases.append(global_data[key]["active_confirmed"][-1])
-
-            names=numpy.array(names)
-            cum_cases=numpy.array(cum_cases)
-            sorta=numpy.argsort(cum_cases)
-
-            selected_names=names[sorta][-5:]
-            glob_last_worst_spread=show_worst_button_spread
-    
-
-
-
-    if(selected_names is not None):
-        return selected_names
+    if(max_index==2):
         
-    else:
+        ## show best button has been pressed
        
-        if(show_best_button is None and show_worst_button is None and show_best_button_spread is None and show_worst_button_spread is None):
-            return ["China", "Korea, South", "Japan", "Germany", "Italy"]
+        names=[]
+        cum_cases=[]
 
-    return []
+        for key in global_data.keys():
+            names.append(key)
+            cum_cases.append(global_data[key]["active_confirmed"][-1])
+
+        
+        names=numpy.array(names)
+        cum_cases=numpy.array(cum_cases)
+       
+        sorta=numpy.argsort(cum_cases)
+
+        selected_names=names[sorta][:5]
+        glob_last_best_spread=show_best_button_spread
+
+    if(max_index==3):
+   
+        ## show_worst_button has been pressed
+       
+        names=[]
+        cum_cases=[]
+
+        for key in global_data.keys():
+            names.append(key)
+            cum_cases.append(global_data[key]["active_confirmed"][-1])
+
+        names=numpy.array(names)
+        cum_cases=numpy.array(cum_cases)
+        sorta=numpy.argsort(cum_cases)
+
+        selected_names=names[sorta][-5:]
+        glob_last_worst_spread=show_worst_button_spread
 
 
+
+
+    return selected_names
+   
 
 
 
