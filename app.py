@@ -499,8 +499,7 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
             hovermode='closest',
             title='',
             plot_bgcolor= app_colors['background'],
-            paper_bgcolor=app_colors['background'],  
-            transition={'duration': 500}
+            paper_bgcolor=app_colors['background']
         )
     }
 
