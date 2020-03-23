@@ -212,6 +212,8 @@ if __name__ == '__main__':
 
     app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+    server = app.server
+    
     glob_last_best=0
     glob_last_worst=0
 
@@ -245,7 +247,7 @@ if __name__ == '__main__':
             'color': app_colors['text']
         }),
         html.Div(style={
-            'textAlign': 'center'}, children=[html.Strong(children='We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A possible explanation: Face masks have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
+            'textAlign': 'center'}, children=[html.Strong(children='Comment: We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A possible explanation (guess, I am not an expert): Face masks (even if it only reduces transmission by 50%) have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
             'textAlign': 'center',
             'color': app_colors['text']
         })]),
