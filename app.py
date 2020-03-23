@@ -17,9 +17,20 @@ import time
 import countryinfo
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
+
+global_per_population=100000.0
+
+
+global_data=None
+dates=None
+last_date=None
+glob_path=""
+
 def update_data(url="https://github.com/CSSEGISandData/COVID-19.git"):
     
-    print(os.system("pwd"))
+    global glob_path
+
+    print("UPD DATA .. GLOB PATH ", glob_path)
     if not os.path.exists("timeseries"):
         os.makedirs("timeseries")
         os.system("git clone %s timeseries" % url)
@@ -31,12 +42,7 @@ def update_data(url="https://github.com/CSSEGISandData/COVID-19.git"):
     
     print("finished update data..")
 ## global variables
-global_per_population=100000.0
 
-
-global_data=None
-dates=None
-last_date=None
 
 
 ######################
@@ -228,6 +234,8 @@ app_colors = {
 'background': 'white',
 'text': 'black'
 }   
+glob_path=os.system("os.path.abspath('.')")
+print("GLOB PATH", path)
 
 update_data()
 load_data()
