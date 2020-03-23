@@ -235,7 +235,7 @@ app_colors = {
 'text': 'black'
 }   
 glob_path=os.system("os.path.abspath('.')")
-print("GLOB PATH", path)
+print("GLOB PATH", glob_path)
 
 update_data()
 load_data()
