@@ -12,7 +12,7 @@ git clone and run app.py, runs in browser
 
 An online version is running at https://covid19-country-comparison.herokuapp.com/ and updates the data from the John-Hopkins repository twice a day.
 
-<img src="https://github.com/thoglu/covid19_country_comparison/raw/master/screenshot.png"></img>
+<img src="https://github.com/thoglu/covid19_country_comparison/raw/master/screenshot.png">
 
 
 
