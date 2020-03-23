@@ -195,14 +195,18 @@ def load_data(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_tim
     #print(confirmed.loc[1])
 
 # update roughly twice a day
+
+"""
 def get_new_data_every(period=40000):
-    """Update the data every 'period' seconds"""
+    
     while True:
         time.sleep(30)
         update_data()
         load_data()
         print("data updated")
         time.sleep(period)
+
+"""
 
 
 print("DASH")
