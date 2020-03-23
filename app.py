@@ -438,6 +438,8 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         if(show_best_button is None and show_worst_button is None and show_best_button_spread is None and show_worst_button_spread is None):
             return ["China", "Korea, South", "Japan", "Germany", "Italy"]
 
+    return []
+
 
 
 
