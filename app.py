@@ -259,14 +259,15 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         'textAlign': 'center',
         'color': app_colors['text']
     }),
+    html.Div(children=[
     html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s. Code for local app at ' % (last_date.month, last_date.day, last_date.year),style={
-        'textAlign': 'center',
+        
         'color': app_colors['text']
     }),
     html.A(href='https://github.com/thoglu/covid19_country_comparison', children="here.",style={
-        'textAlign': 'center',
+        
         'color': app_colors['text']
-    }),
+    })]),
     html.Hr(),
     html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days is an indication of reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures)',style={
         'textAlign': 'center',
