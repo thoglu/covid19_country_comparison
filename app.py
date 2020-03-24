@@ -64,7 +64,8 @@ def find_doubling_time(arr):
         cur_ind-=1
 
         cur_ratio=arr[cur_ind]/arr[max_ind]
-
+        if(cur_ratio > 1):
+            return 50
         if(cur_ratio<=0.5): 
 
             frac1=0.5-cur_ratio
@@ -439,7 +440,7 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         'color': app_colors['text']
     })]),
     html.Hr(),
-    html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days is an indication of reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures)',style={
+    html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days might be an indication of soon reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures). If active cases are reducing doubling time is fixed to 50.',style={
         'textAlign': 'center',
         'color': app_colors['text']
     }),
