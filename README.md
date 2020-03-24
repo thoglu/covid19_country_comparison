@@ -7,10 +7,10 @@ from changed testing criteria, for example if the number of tests is kept fixed 
 
 The currently strongest and lowest hit countries in terms of doubling time or overall prevalence per capita can be loaded via a button.
 
-Requirements: pandas, numpy, dash, plotly, countryinfo
+Requirements: pandas, numpy, dash, plotly, gunicorn, countryinfo
 
 Installation: 
-git clone and run app.py, runs in browser
+git clone, then call "gunicorn app:server", runs in browser
 
 
 <img src="./screenshot.jpg">
