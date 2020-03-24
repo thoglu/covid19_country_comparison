@@ -14,7 +14,7 @@ import math
 import datetime
 import time
 import glob
-
+import math
 import countryinfo
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
@@ -64,8 +64,8 @@ def find_doubling_time(arr):
         cur_ind-=1
 
         cur_ratio=arr[cur_ind]/arr[max_ind]
-        if(cur_ratio > 1):
-            return numpy.infty
+        #if(cur_ratio > 1):
+        #    return math.inf
         if(cur_ratio<=0.5): 
 
             frac1=0.5-cur_ratio
@@ -410,6 +410,7 @@ load_data_daily_reports()
 
 #global_data, dates=load_data()
     
+#<<<<<<< HEAD
 executor = ThreadPoolExecutor(max_workers=1)
 executor.submit(get_new_data_every)
 
@@ -440,7 +441,7 @@ app.layout = html.Div( style={"max-width": 800}, children=[
         'color': app_colors['text']
     })]),
     html.Hr(),
-    html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days might be an indication of soon reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures). inf="infinity", meaning current cases are decreasing.',style={
+    html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days might be an indication of soon reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures). Values > 20 could be infinite. In general all values are to be taken with a grain of salt due to different data policies.',style={
         'textAlign': 'center',
         'color': app_colors['text']
     }),
@@ -548,16 +549,160 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         cum_cases=numpy.array(cum_cases)
 
        
-        sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+        sel_mask=(cum_cases > case_req) #numpy.isfinite(days_to_double) & 
 
         sorta=numpy.argsort(days_to_double[sel_mask])
 
-     
+        """     
+        =======
+            executor = ThreadPoolExecutor(max_workers=1)
+            executor.submit(get_new_data_every)
 
+            external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+            app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+            glob_last_best=0
+            glob_last_worst=0
+
+            glob_last_best_spread=0
+            glob_last_worst_spread=0
+
+            app_colors = {
+            'background': 'white',
+            'text': 'black'
+            }   
+            dropdown_data=[]
+            for k in sorted(global_data.keys()):
+                dropdown_data.append({"label": k+" days to double ~ %.1f" % (global_data[k]["days_to_double"]), "value": k})
+
+            app.layout = html.Div( style={"max-width": 800}, children=[
+                html.H1(children='Covid-19 visualization', style={
+                    'textAlign': 'center',
+                    'color': app_colors['text']
+                }),
+                html.H5(children='Select countries to compare *total currently active* and *daily new* cases.',style={
+                    'textAlign': 'center',
+                    'color': app_colors['text']
+                }),
+                html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s.' % (last_date.month, last_date.day, last_date.year),style={
+                    'textAlign': 'center',
+                    'color': app_colors['text']
+                }),
+                html.Hr(),
+                html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days is an indication of reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures)',style={
+                    'textAlign': 'center',
+                    'color': app_colors['text']
+                }),
+               
+                html.Div(children=[html.Div(style={'textAlign': 'center'}, children=[html.Button('Show 5 best (doubling)', id='button_best'),
+            html.Button('Show 5 worst (doubling)', id='button_worst'), html.Button('Show 5 best (spread)', id='button_best_spread'), html.Button('Show 5 worst (spread)', id='button_worst_spread')]),
+                    dcc.Dropdown(
+                id="dropdown_selection",
+                options=dropdown_data,
+                value=["Germany"],
+                multi=True
+            ),
+            dcc.Checklist(
+            id="checkpoints",
+            options=[
+                {'label': 'logarithmic y-axis', 'value': 'log'},
+                {'label': 'show daily new cases', 'value': 'yes'},
+            ],
+            value=['log',"no"]
+            ) 
+             ]),
+
+                dcc.Graph(
+                    id='graph',
+                    figure={
+                        'data': [
+                        ],
+                        'layout': {
+                            'title': 'Country comparison',
+                            'plot_bgcolor': app_colors['background'],
+                            'paper_bgcolor': app_colors['background']   
+                    }
+                })
+            ])
+           
+            @app.callback(
+            Output('dropdown_selection', 'value'),
+            [Input('button_best', 'n_clicks_timestamp'), Input('button_worst', 'n_clicks_timestamp'),Input('button_best_spread', 'n_clicks_timestamp'),Input('button_worst_spread', 'n_clicks_timestamp')])
+            def update_selection(show_best_button, show_worst_button, show_best_button_spread, show_worst_button_spread):#
+
+                #global glob_last_best
+                #global glob_last_worst
+                #global glob_last_best_spread
+                #global glob_last_worst_spread
+
+                max_time=-9999999999
+                max_index=-1
+
+                #1st button
+                if(show_best_button is not None):
+                    if(show_best_button>max_time):
+                        max_time=show_best_button
+                        max_index=0
+                
+                # 2nd button
+                if(show_worst_button is not None):
+                    if(show_worst_button>max_time):
+                        max_time=show_worst_button
+                        max_index=1
+
+                # 2nd button
+                if(show_best_button_spread is not None):
+                    if(show_best_button_spread>max_time):
+                        max_time=show_best_button_spread
+                        max_index=2
+
+                # 3rd button
+                if(show_worst_button_spread is not None):
+                    if(show_worst_button_spread>max_time):
+                        max_time=show_worst_button_spread
+                        max_index=3
+                
+                if(max_index==-1):
+                    # default at loading
+                    return ["China", "Korea, South", "Japan", "Germany", "Italy"]
+
+                case_req=400
+                selected_names=None
+
+                if(max_index==0):
+                
+                    ## show best button has been pressed
+                   
+                    names=[]
+                    days_to_double=[]
+                    cum_cases=[]
+
+                    for key in global_data.keys():
+                        names.append(key)
+                        days_to_double.append(global_data[key]["days_to_double"])
+                        cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+
+                    days_to_double=numpy.array(days_to_double)
+                    names=numpy.array(names)
+                    cum_cases=numpy.array(cum_cases)
+
+                   
+                    sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+
+                    sorta=numpy.argsort(days_to_double[sel_mask])
+
+                 
+
+                    selected_names=names[sel_mask][sorta][-5:][::-1]
+                    glob_last_best=show_best_button
+        >>>>>>> 4659ab63f62e74a04e1a5544eee5336473c0c30e
+        """
         selected_names=names[sel_mask][sorta][-5:][::-1]
         glob_last_best=show_best_button
 
 
+    #<<<<<<< HEAD
 
     if(max_index==1):
     
@@ -577,13 +722,41 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         names=numpy.array(names)
         cum_cases=numpy.array(cum_cases)
 
-        sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+        sel_mask= (cum_cases > case_req) 
 
         sorta=numpy.argsort(days_to_double[sel_mask])
+        """        
+        =======
+                if(max_index==1):
+                
+                    ## show_worst_button has been pressed
+                   
+                    names=[]
+                    mean_r0=[]
+                    days_to_double=[]
+                    cum_cases=[]
 
+                    for key in global_data.keys():
+                        names.append(key)
+                        days_to_double.append(global_data[key]["days_to_double"])
+                        cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+
+                    days_to_double=numpy.array(days_to_double)
+                    names=numpy.array(names)
+                    cum_cases=numpy.array(cum_cases)
+
+                    sel_mask=numpy.isfinite(days_to_double) & (cum_cases > case_req) 
+
+                    sorta=numpy.argsort(days_to_double[sel_mask])
+
+                    selected_names=names[sel_mask][sorta][:5]
+                    glob_last_worst=show_worst_button
+        >>>>>>> 4659ab63f62e74a04e1a5544eee5336473c0c30e
+        """
         selected_names=names[sel_mask][sorta][:5]
         glob_last_worst=show_worst_button
 
+    #<<<<<<< HEAD
 
     ## spread
     if(max_index==2):
@@ -623,8 +796,53 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
 
         selected_names=names[sorta][-5:]
         glob_last_worst_spread=show_worst_button_spread
+    """
+    =======
+            ## spread
+            if(max_index==2):
+                
+                ## show best button has been pressed
+               
+                names=[]
+                cum_cases=[]
+
+                for key in global_data.keys():
+                    names.append(key)
+                    cum_cases.append(global_data[key]["active_confirmed"][-1])
+
+                
+                names=numpy.array(names)
+                cum_cases=numpy.array(cum_cases)
+               
+                sorta=numpy.argsort(cum_cases)
+
+                selected_names=names[sorta][:5]
+                glob_last_best_spread=show_best_button_spread
+
+            if(max_index==3):
+           
+                ## show_worst_button has been pressed
+               
+                names=[]
+                cum_cases=[]
+
+                for key in global_data.keys():
+                    names.append(key)
+                    cum_cases.append(global_data[key]["active_confirmed"][-1])
+
+                names=numpy.array(names)
+                cum_cases=numpy.array(cum_cases)
+                sorta=numpy.argsort(cum_cases)
+
+                selected_names=names[sorta][-5:]
+                glob_last_worst_spread=show_worst_button_spread
 
 
+
+
+            return selected_names
+    >>>>>>> 4659ab63f62e74a04e1a5544eee5336473c0c30e
+    """
 
 
     return selected_names
@@ -676,7 +894,33 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
                 
                 name="%s (daily new)" % (inp)
                 ) )
+    """            
+    <<<<<<< HEAD
+    =======
+                if(show_daily_cases):
+                    data_list.append(dict(
+                        x=dates,
+                        y=global_data[inp]["daily_new_confirmed"],
+                        line=dict(color=colors[ind], width=4,dash='dash'),
+                        
+                        name="%s (daily new)" % (inp)
+                        ) )
 
+            return {
+                'data': data_list,
+                'layout': dict(
+                    xaxis={'title': 'Date'},
+                    yaxis={"type": log_opt, 'title': '# per %s population' % str(global_per_population)},
+                    margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                    legend={'x': 0.02, 'y': 0.98},
+                    hovermode='closest',
+                    title='',
+                    plot_bgcolor= app_colors['background'],
+                    paper_bgcolor=app_colors['background'],
+                )
+            }
+    >>>>>>> 4659ab63f62e74a04e1a5544eee5336473c0c30e
+    """
     return {
         'data': data_list,
         'layout': dict(
