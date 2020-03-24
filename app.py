@@ -13,6 +13,7 @@ import numpy
 import math
 import datetime
 import time
+import glob
 
 import countryinfo
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
@@ -208,14 +209,180 @@ def load_data(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_tim
 # update roughly twice a day
 
 
+def load_data_daily_reports(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_daily_reports"):
+
+    global global_data, dates, last_date
+
+    sorted_reports=glob.glob(os.path.join(timeseries_folder, "*.csv"))
+    sorted_reports.sort()
+
+    print(sorted_reports)
+    dates=[]
+
+    all_data=dict()
+
+    countryinfo_names=dict()
+    countryinfo_names["Czechia"]="Czech Republic"
+    countryinfo_names["Korea, South"]="South Korea"
+    countryinfo_names["Taiwan*"]="Taiwan"
+    countryinfo_names["US"]="United States"
+
+    all_country_names=list(set(pd.read_csv(sorted_reports[-1])["Country_Region"]))
+    all_country_names.sort()
+
+    all_data=dict()
+    
+    countryinfo_names=dict()
+    countryinfo_names["Czechia"]="Czech Republic"
+    countryinfo_names["Korea, South"]="South Korea"
+    countryinfo_names["Taiwan*"]="Taiwan"
+    countryinfo_names["US"]="United States"
+
+    ## non supported because of country-info non-support
+    not_supported=["Andorra", "Bahamas", "Cabo Verde", "Serbia", "Timor-Leste", "North Macedonia", "Congo (Brazzaville)", "Congo (Kinshasa)", "Cote d'Ivoire", "Cruise Ship", "Eswatini", "Montenegro", "Gambia", "Holy See"]
+
+    double_names=dict()
+    double_names["China"]="Mainland China"
+    double_names["Korea, South"]="South Korea"
+
+    for n in not_supported:
+        if(n in all_country_names):
+            all_country_names.remove(n)
+
+
+
+
+    for file in sorted_reports:
+        print("..reading ", file)
+        all=pd.read_csv(file)
+        region_col_name="Country/Region"
+        if("Country_Region" in all.columns):
+            region_col_name="Country_Region"
+        
+        for cname in all_country_names:
+
+            if(cname in not_supported):
+                print("cname ", cname , " not suppprted")
+                continue
+            found=True
+            result=all[all[region_col_name]==cname]
+            if(len(result)==0):
+                if(cname in double_names.keys()):
+
+                    result=all[all[region_col_name]==double_names[cname]]
+                    if(len(result)==0):
+                        found=False
+                    else:
+                        print("yes double name ", cname)
+                else:
+                    found=False
+
+            if(found==False):
+                
+                #print(cname , " not found ")
+                if(cname not in all_data.keys()):
+                    all_data[cname]=dict()
+                    all_data[cname]["total_confirmed"]=[0.0]
+                    all_data[cname]["total_died"]=[0.0]
+                    all_data[cname]["total_recovered"]=[0.0]
+                else:
+                    all_data[cname]["total_confirmed"].append(all_data[cname]["total_confirmed"][-1])
+                    all_data[cname]["total_died"].append(all_data[cname]["total_died"][-1])
+                    all_data[cname]["total_recovered"].append(all_data[cname]["total_recovered"][-1])
+            else:
+                if(cname not in all_data.keys()):
+                    all_data[cname]=dict()
+                    all_data[cname]["total_confirmed"]=[]
+                    all_data[cname]["total_died"]=[]
+                    all_data[cname]["total_recovered"]=[]
+
+                #print(result)
+                vals=result["Confirmed"].values
+                finite=numpy.where(numpy.isfinite(vals), vals, 0)
+
+                all_data[cname]["total_confirmed"].append(finite.sum())
+
+                vals=result["Deaths"].values
+                finite=numpy.where(numpy.isfinite(vals), vals, 0)
+
+                all_data[cname]["total_died"].append(finite.sum())
+
+                vals=result["Recovered"].values
+                finite=numpy.where(numpy.isfinite(vals), vals, 0)
+
+                all_data[cname]["total_recovered"].append(finite.sum())
+
+        date_str=file.split("/")[-1][:10]
+        
+        dates.append(datetime.datetime.strptime("%d-%d-%d" % ( int(date_str[:2]), int(date_str[3:5]), int(date_str[7:10])), "%m-%d-%y"))
+
+    for ind in range(len(all_data.keys())):
+        
+        this_country=all_country_names[ind]
+  
+        cname=this_country
+        if(cname in countryinfo_names.keys()):
+            cname=countryinfo_names[cname]
+        
+        this_country_info=countryinfo.CountryInfo(cname)
+
+        cname=cname.lower()
+
+        if(cname not in this_country_info.__dict__["_CountryInfo__countries"].keys()):
+            print("couldnt find country ", this_country, " in countryinfo object..shouldnt happen")
+            sys.exit(-1)
+        
+        population=this_country_info.population()
+
+        print(population)
+
+        all_data[this_country]["total_confirmed"]=numpy.array(all_data[this_country]["total_confirmed"])
+        all_data[this_country]["total_recovered"]=numpy.array(all_data[this_country]["total_recovered"])
+        all_data[this_country]["total_died"]=numpy.array(all_data[this_country]["total_died"])
+        all_data[this_country]["total_active"]=all_data[this_country]["total_confirmed"]-all_data[this_country]["total_recovered"]-all_data[this_country]["total_died"]
+
+        """
+        if("total_confirmed_per_pop" not in all_data[this_country].keys()):
+            all_data[this_country]["total_confirmed_per_pop"]=0.0
+
+        all_data[this_country]["total_confirmed_per_pop"]=all_data[this_country]["total_confirmed"]/float(population)*global_per_population
+        """
+
+        add_one=numpy.array([0.0]+list(all_data[this_country]["total_confirmed"]))
+        if("daily_new_confirmed_per_pop" not in all_data[this_country].keys()):
+            all_data[this_country]["daily_new_confirmed_per_pop"]=0.0
+        all_data[this_country]["daily_new_confirmed_per_pop"]+=(add_one[1:]-add_one[0:-1])/float(population)*global_per_population
+
+        """
+        if("total_recovered_per_pop" not in all_data[this_country].keys()):
+            all_data[this_country]["total_recovered_per_pop"]=0.0
+        all_data[this_country]["total_recovered"]+=recovered.loc[ind].values[4:]/float(population)*global_per_population
+        """
+        if("active_confirmed_per_pop" not in all_data[this_country].keys()):
+            all_data[this_country]["active_confirmed_per_pop"]=0.0
+        all_data[this_country]["active_confirmed_per_pop"]+=(all_data[this_country]["total_active"])/float(population)*global_per_population
+    
+        all_data[this_country]["days_to_double"]=find_doubling_time(all_data[this_country]["total_active"][:-1]) ## exclude last day which might be faulty
+
+        add_one=numpy.array([all_data[this_country]["daily_new_confirmed_per_pop"][0]]+list(all_data[this_country]["daily_new_confirmed_per_pop"]))
+        growth_facs=(add_one[1:]/add_one[0:-1])
+        all_data[this_country]["growth_factor"]=numpy.where( numpy.isfinite(growth_facs), growth_facs, 1e-10) 
+
+       
+     
+    global_data=all_data
+    last_date=dates[-1]
+
+    print("finished load data")
+
 def get_new_data_every(period=40000):
     
     while True:
         time.sleep(30)
         update_data()
-        load_data()
+        load_data_daily_reports()
         print("data updated")
-        time.sleep(period)
+        time.sleep(50)
 
 
 
@@ -238,7 +405,7 @@ glob_path=os.getcwd()
 print("GLOB PATH", glob_path)
 
 update_data()
-load_data()
+load_data_daily_reports()
 
 #global_data, dates=load_data()
     
@@ -373,7 +540,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         for key in global_data.keys():
             names.append(key)
             days_to_double.append(global_data[key]["days_to_double"])
-            cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+            cum_cases.append(global_data[key]["total_confirmed"][-1])
 
         days_to_double=numpy.array(days_to_double)
         names=numpy.array(names)
@@ -403,7 +570,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         for key in global_data.keys():
             names.append(key)
             days_to_double.append(global_data[key]["days_to_double"])
-            cum_cases.append(global_data[key]["abs_total_confirmed"][-1])
+            cum_cases.append(global_data[key]["total_confirmed"][-1])
 
         days_to_double=numpy.array(days_to_double)
         names=numpy.array(names)
@@ -427,7 +594,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
 
         for key in global_data.keys():
             names.append(key)
-            cum_cases.append(global_data[key]["active_confirmed"][-1])
+            cum_cases.append(global_data[key]["active_confirmed_per_pop"][-1])
 
         
         names=numpy.array(names)
@@ -447,7 +614,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
 
         for key in global_data.keys():
             names.append(key)
-            cum_cases.append(global_data[key]["active_confirmed"][-1])
+            cum_cases.append(global_data[key]["active_confirmed_per_pop"][-1])
 
         names=numpy.array(names)
         cum_cases=numpy.array(cum_cases)
@@ -495,7 +662,7 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
 
         data_list.append(dict(
             x=dates,
-            y=global_data[inp]["active_confirmed"],
+            y=global_data[inp]["active_confirmed_per_pop"],
             line=dict(color=colors[ind], width=4
                           ),
             name="%s (active) / doubling time: %.1f days" % (inp, global_data[inp]["days_to_double"])
@@ -503,7 +670,7 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
         if(show_daily_cases):
             data_list.append(dict(
                 x=dates,
-                y=global_data[inp]["daily_new_confirmed"],
+                y=global_data[inp]["daily_new_confirmed_per_pop"],
                 line=dict(color=colors[ind], width=4,dash='dash'),
                 
                 name="%s (daily new)" % (inp)
