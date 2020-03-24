@@ -382,7 +382,7 @@ def get_new_data_every(period=40000):
         update_data()
         load_data_daily_reports()
         print("data updated")
-        time.sleep(50)
+        time.sleep(period)
 
 
 
