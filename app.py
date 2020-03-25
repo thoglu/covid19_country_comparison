@@ -59,15 +59,23 @@ def find_doubling_time(arr):
 
     last_ratio=1.0
 
+    if(arr[cur_ind]==0):
+        return 0
+
+    
     while(cur_ind>0):
         last_ind=cur_ind
         cur_ind-=1
 
         cur_ratio=arr[cur_ind]/arr[max_ind]
+
+        if(cur_ratio==0):
+            return 0
         #if(cur_ratio > 1):
         #    return math.inf
+        #print("RAT", cur_ratio)
         if(cur_ratio<=0.5): 
-
+            #print("smaller ", cur_ind)
             frac1=0.5-cur_ratio
             frac2=last_ratio-0.5
 
@@ -190,6 +198,7 @@ def load_data(timeseries_folder="timeseries/csse_covid_19_data/csse_covid_19_tim
         #all_data[this_country]["r0_low"]=r0_low
         #all_data[this_country]["r0_high"]=r0_high
         #all_data[this_country]["r0_mean"]=(r0_low+r0_high)*0.5
+        
         all_data[this_country]["days_to_double"]=find_doubling_time(all_data[this_country]["active_confirmed"][:-1]) ## exclude last day which might be faulty
 
         add_one=numpy.array([all_data[this_country]["daily_new_confirmed"][0]]+list(all_data[this_country]["daily_new_confirmed"]))
@@ -273,8 +282,7 @@ def load_data_daily_reports(timeseries_folder="timeseries/csse_covid_19_data/css
                     result=all[all[region_col_name]==double_names[cname]]
                     if(len(result)==0):
                         found=False
-                    else:
-                        print("yes double name ", cname)
+                   
                 else:
                     found=False
 
@@ -335,7 +343,7 @@ def load_data_daily_reports(timeseries_folder="timeseries/csse_covid_19_data/css
         
         population=this_country_info.population()
 
-        print(population)
+        #print(population)
 
         all_data[this_country]["total_confirmed"]=numpy.array(all_data[this_country]["total_confirmed"])
         all_data[this_country]["total_recovered"]=numpy.array(all_data[this_country]["total_recovered"])
@@ -362,9 +370,20 @@ def load_data_daily_reports(timeseries_folder="timeseries/csse_covid_19_data/css
         if("active_confirmed_per_pop" not in all_data[this_country].keys()):
             all_data[this_country]["active_confirmed_per_pop"]=0.0
         all_data[this_country]["active_confirmed_per_pop"]+=(all_data[this_country]["total_active"])/float(population)*global_per_population
-    
-        all_data[this_country]["days_to_double"]=find_doubling_time(all_data[this_country]["total_active"][:-1]) ## exclude last day which might be faulty
+        
+        #print("find doublign of ", this_country)
+        
+        tot_num=len(all_data[this_country]["total_active"])-1
+        doubling_times=[]
+        for i in range(tot_num):
 
+            doubling_times=[find_doubling_time(all_data[this_country]["total_active"][:-(i+1)])]+doubling_times ## exclude last day which might be faulty
+        
+        all_data[this_country]["days_to_double"]=numpy.array(doubling_times)
+
+        #if(this_country=="Austria"):
+        #    print(all_data[this_country]["active_confirmed_per_pop"][:-1])
+        #    sys.exit(-1)
         add_one=numpy.array([all_data[this_country]["daily_new_confirmed_per_pop"][0]]+list(all_data[this_country]["daily_new_confirmed_per_pop"]))
         growth_facs=(add_one[1:]/add_one[0:-1])
         all_data[this_country]["growth_factor"]=numpy.where( numpy.isfinite(growth_facs), growth_facs, 1e-10) 
@@ -417,75 +436,97 @@ executor.submit(get_new_data_every)
 
 dropdown_data=[]
 for k in sorted(global_data.keys()):
-    dropdown_data.append({"label": k+" days to double ~ %.1f" % (global_data[k]["days_to_double"]), "value": k})
+    dropdown_data.append({"label": k+" days to double ~ %.1f" % (global_data[k]["days_to_double"][-1]), "value": k})
 
-app.layout = html.Div( style={"max-width": 800}, children=[
-    html.H1(children='Covid-19 visualization', style={
-        'textAlign': 'center',
-        'color': app_colors['text']
-    }),
-    html.H5(children='Select countries to compare *total currently active* and *daily new* cases.',style={
-        'textAlign': 'center',
-        'color': app_colors['text']
-    }),
-    html.P(children='Based on data from John-Hopkins University. Last updated %s/%s/%s. ' % (last_date.month, last_date.day, last_date.year),style={
-        'textAlign': 'center',
-        'color': app_colors['text']
-    }),
-    html.Div(style={
-        'textAlign': 'center',
-        'color': app_colors['text']
-    },children=[
-    html.A(href='https://github.com/thoglu/covid19_country_comparison', children="githup repo",style={
-        
-        'color': app_colors['text']
-    })]),
-    html.Hr(),
-    html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days might be an indication of soon reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures). Values > 20 could be infinite. In general all values are to be taken with a grain of salt due to different data policies.',style={
-        'textAlign': 'center',
-        'color': app_colors['text']
-    }),
-    html.Div(style={
-        'textAlign': 'center'}, children=[html.Strong(children='Comment: We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A guess (I am not an epidemologist): Basic face masks can have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
-        'textAlign': 'center',
-        'color': app_colors['text']
-    })]),
-    html.Hr(),
-    html.P(children='Countries with most relaxed and critical situations based on doubling time (tot number of cases > 500)  or current per-100k people spread of the disease.',style={
-        'textAlign': 'center',
-        'color': app_colors['text']
-    }),
 
-    html.Div(children=[html.Div(style={'textAlign': 'center'}, children=[html.Button('Show 5 best (doubling)', id='button_best'),
-html.Button('Show 5 worst (doubling)', id='button_worst'), html.Button('Show 5 best (spread)', id='button_best_spread'), html.Button('Show 5 worst (spread)', id='button_worst_spread')]),
-        dcc.Dropdown(
-    id="dropdown_selection",
-    options=dropdown_data,
-    value=["Germany"],
-    multi=True
-),
-dcc.Checklist(
-id="checkpoints",
-options=[
-    {'label': 'logarithmic y-axis', 'value': 'log'},
-    {'label': 'show daily new cases', 'value': 'yes'},
-],
-value=['log',"no"]
-) 
- ]),
 
-    dcc.Graph(
-        id='graph',
-        figure={
-            'data': [
-            ],
-            'layout': {
-                'title': 'Country comparison',
-                'plot_bgcolor': app_colors['background'],
-                'paper_bgcolor': app_colors['background']   
-        }
-    })
-])
+def get_layout():
+    return  html.Div( style={"max-width": 800}, children=[
+            html.H1(children='Covid-19 visualization', style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
+            html.H5(children='Select countries to compare *total currently active* and *daily new* cases.',style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
+            html.P(children='Based on data from John-Hopkins University. Last date %s/%s/%s.' % (last_date.month, last_date.day, last_date.year),style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
+            html.Div(style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            },children=[
+            html.A(href='https://github.com/thoglu/covid19_country_comparison', children="githup repo",style={
+                
+                'color': app_colors['text']
+            })]),
+            html.Hr(),
+            html.P(children='Doubling time: Since a typical infection might take 10-14 days? a doubling time of active cases longer than 10-14 days might be an indication of soon reducing cases. (If testing is not biased, for example by fixed test size or change of test procedures). Values > 20 could be infinite. In general all values are to be taken with a grain of salt due to different data policies.',style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
+            html.Div(style={
+                'textAlign': 'center'}, children=[html.Strong(children='Comment: We want a doubling time > 10-14 days and effective R_0 (number of spreads per person) < 1! China, South Korea and Japan seem to be there. Japan has different non-strict measures compared to SK and China, and a different testing policy by testing according to symptoms. Italy, which has even stricter measures than Japan has a much worse doubling time (as of March 23). A guess (I am not an epidemologist): Basic face masks can have a non-negligible effect if whole population wears it, in particular due to asymptomatics.',style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            })]),
+            html.Hr(),
+            html.P(children='Countries with most relaxed and critical situations based on doubling time (tot number of cases > 500)  or current per-100k people spread of the disease.',style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
+
+            html.Div(children=[html.Div(style={'textAlign': 'center'}, children=[html.Button('Show 5 best (doubling)', id='button_best'),
+        html.Button('Show 5 worst (doubling)', id='button_worst'), html.Button('Show 5 best (spread)', id='button_best_spread'), html.Button('Show 5 worst (spread)', id='button_worst_spread')]),
+                dcc.Dropdown(
+            id="dropdown_selection",
+            options=dropdown_data,
+            value=["Germany"],
+            multi=True
+        ),
+        dcc.Checklist(
+        id="checkpoints",
+        options=[
+            {'label': 'logarithmic y-axis', 'value': 'log'},
+            {'label': 'show daily new cases', 'value': 'yes'},
+        ],
+        value=['log',"no"]
+        ) 
+         ]),
+
+            dcc.Graph(
+                id='graph',
+                figure={
+                    'data': [
+                    ],
+                    'layout': {
+                        'title': 'Country comparison',
+                        'plot_bgcolor': app_colors['background'],
+                        'paper_bgcolor': app_colors['background']   
+                }
+            }),
+            html.H3(children='Development of "days to double" over time',style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
+            dcc.Graph(
+                id='graph2',
+                figure={
+                    'data': [
+                    ],
+                    'layout': {
+                        'title': 'Days to double over time',
+                        'plot_bgcolor': app_colors['background'],
+                        'paper_bgcolor': app_colors['background']   
+                }
+            })
+        ])
+
+
+app.layout = get_layout()
+
    
 @app.callback(
 Output('dropdown_selection', 'value'),
@@ -496,6 +537,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
     #global glob_last_worst
     #global glob_last_best_spread
     #global glob_last_worst_spread
+    global global_data
 
     max_time=-9999999999
     max_index=-1
@@ -860,7 +902,7 @@ Output('graph', 'figure'),
 [Input('dropdown_selection', 'value'), Input('checkpoints', 'value')])
 def update_figure1(selected_input_dropdown, checkpoints_input):#
     
-    global app_colors
+    global app_colors, global_data, dates
 
     show_daily_cases=0
     log_opt="linear"
@@ -875,6 +917,7 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
 
     colors=["red", "green", "blue", "purple", "gray", "brown", "orange", "pink", "black", "yellow"]
 
+    print("len dates .. ", len(dates), len(global_data["Germany"]["total_confirmed"]))
     for ind, inp in enumerate(selected_input_dropdown):
 
         
@@ -884,7 +927,7 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
             y=global_data[inp]["active_confirmed_per_pop"],
             line=dict(color=colors[ind], width=4
                           ),
-            name="%s (active) / doubling time: %.1f days" % (inp, global_data[inp]["days_to_double"])
+            name="%s (active) / doubling time: %.1f days" % (inp, global_data[inp]["days_to_double"][-1])
             ) )
         if(show_daily_cases):
             data_list.append(dict(
@@ -894,37 +937,11 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
                 
                 name="%s (daily new)" % (inp)
                 ) )
-    """            
-    <<<<<<< HEAD
-    =======
-                if(show_daily_cases):
-                    data_list.append(dict(
-                        x=dates,
-                        y=global_data[inp]["daily_new_confirmed"],
-                        line=dict(color=colors[ind], width=4,dash='dash'),
-                        
-                        name="%s (daily new)" % (inp)
-                        ) )
 
-            return {
-                'data': data_list,
-                'layout': dict(
-                    xaxis={'title': 'Date'},
-                    yaxis={"type": log_opt, 'title': '# per %s population' % str(global_per_population)},
-                    margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                    legend={'x': 0.02, 'y': 0.98},
-                    hovermode='closest',
-                    title='',
-                    plot_bgcolor= app_colors['background'],
-                    paper_bgcolor=app_colors['background'],
-                )
-            }
-    >>>>>>> 4659ab63f62e74a04e1a5544eee5336473c0c30e
-    """
     return {
         'data': data_list,
         'layout': dict(
-            xaxis={'title': 'Date'},
+            xaxis={'title': 'date'},
             yaxis={"type": log_opt, 'title': '# per %s population' % str(global_per_population)},
             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
             legend={'x': 0.02, 'y': 0.98},
@@ -935,20 +952,14 @@ def update_figure1(selected_input_dropdown, checkpoints_input):#
         )
     }
 
-"""
+
 @app.callback(
 Output('graph2', 'figure'),
 [Input('dropdown_selection', 'value'), Input('checkpoints', 'value')])
 def update_figure2(selected_input_dropdown, checkpoints_input):#
     
-    global app_colors
+    global app_colors, global_data, dates
 
-    log_opt="linear"
-    
-    if("log" in checkpoints_input):
-        log_opt="log"
-
-  
     data_list=[]
 
     colors=["red", "green", "blue", "purple", "gray", "brown", "orange", "pink", "black", "yellow"]
@@ -956,28 +967,27 @@ def update_figure2(selected_input_dropdown, checkpoints_input):#
     for ind, inp in enumerate(selected_input_dropdown):
 
         data_list.append(dict(
-            x=dates,
-            y=global_data[inp]["growth_factor"],
+            x=dates[:-1],
+            y=global_data[inp]["days_to_double"],
             line=dict(color=colors[ind], width=4
                           ),
             name="%s" % (inp)
             ) )
-       
+     
     return {
         'data': data_list,
         'layout': dict(
-            xaxis={'title': 'Date'},
-            yaxis={"type": log_opt, "title": 'growth factor'},
+            xaxis={'title': 'date'},
+            yaxis={"type": "linear", "title": 'days to double (per date)'},
             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
             legend={'x': 0.02, 'y': 0.98},
             hovermode='closest',
             title='',
             plot_bgcolor= app_colors['background'],
-            paper_bgcolor=app_colors['background'],  
-            transition={'duration': 500}
+            paper_bgcolor=app_colors['background']
         )
     }
-"""
+
 
 
 
