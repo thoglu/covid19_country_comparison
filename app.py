@@ -249,7 +249,7 @@ def load_data_daily_reports(timeseries_folder="timeseries/csse_covid_19_data/css
     countryinfo_names["US"]="United States"
 
     ## non supported because of country-info non-support
-    not_supported=["Andorra", "Bahamas", "Cabo Verde", "Serbia", "Timor-Leste", "North Macedonia", "Congo (Brazzaville)", "Congo (Kinshasa)", "Cote d'Ivoire", "Cruise Ship", "Diamond Princess", "Eswatini", "Montenegro", "Gambia", "Holy See"]
+    not_supported=["Andorra", "Bahamas", "Cabo Verde", "Serbia", "Timor-Leste", "Kosovo", "West Bank and Gaza", "North Macedonia", "Congo (Brazzaville)", "Congo (Kinshasa)", "Cote d'Ivoire", "Cruise Ship", "Diamond Princess", "Eswatini", "Montenegro", "Gambia", "Holy See"]
 
     double_names=dict()
     double_names["China"]="Mainland China"
