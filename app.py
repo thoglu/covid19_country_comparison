@@ -521,6 +521,7 @@ def get_layout():
                 'textAlign': 'center',
                 'color': app_colors['text']
             }),
+            html.Div(style={'textAlign': 'center'}, children=[html.Button('Show 5 best (doubling rate deaths)', id='button_best_died_doubling'), html.Button('Show 5 worst (doubling rate deaths)', id='button_worst_died_doubling')]),
             dcc.Graph(
                 id='graph3',
                 figure={
@@ -556,8 +557,8 @@ app.layout = get_layout()
    
 @app.callback(
 Output('dropdown_selection', 'value'),
-[Input('button_best', 'n_clicks_timestamp'), Input('button_worst', 'n_clicks_timestamp'),Input('button_best_spread', 'n_clicks_timestamp'),Input('button_worst_spread', 'n_clicks_timestamp')])
-def update_selection(show_best_button, show_worst_button, show_best_button_spread, show_worst_button_spread):#
+[Input('button_best', 'n_clicks_timestamp'), Input('button_worst', 'n_clicks_timestamp'),Input('button_best_spread', 'n_clicks_timestamp'),Input('button_worst_spread', 'n_clicks_timestamp'), Input('button_best_died_doubling', 'n_clicks_timestamp'),Input('button_worst_died_doubling', 'n_clicks_timestamp')])
+def update_selection(show_best_button, show_worst_button, show_best_button_spread, show_worst_button_spread, show_best_button_died_doubling, show_worst_button_died_doubling):#
 
     #global glob_last_best
     #global glob_last_worst
@@ -591,12 +592,25 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         if(show_worst_button_spread>max_time):
             max_time=show_worst_button_spread
             max_index=3
+
+    # 4 button
+    if(show_best_button_died_doubling is not None):
+        if(show_best_button_died_doubling>max_time):
+            max_time=show_best_button_died_doubling
+            max_index=4
+
+    # 5 button
+    if(show_worst_button_died_doubling is not None):
+        if(show_worst_button_died_doubling>max_time):
+            max_time=show_worst_button_died_doubling
+            max_index=5
     
     if(max_index==-1):
         # default at loading
         return ["China", "Korea, South", "Japan", "Germany", "Italy"]
 
     case_req=400
+    died_req=10
     selected_names=None
 
     if(max_index==0):
@@ -622,10 +636,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         sorta=numpy.argsort(days_to_double[sel_mask])
 
         selected_names=names[sel_mask][sorta][-5:][::-1]
-        glob_last_best=show_best_button
-
-
-    #<<<<<<< HEAD
+      
 
     if(max_index==1):
     
@@ -650,10 +661,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         sorta=numpy.argsort(days_to_double[sel_mask])
       
         selected_names=names[sel_mask][sorta][:5]
-        glob_last_worst=show_worst_button
-
-    #<<<<<<< HEAD
-
+ 
     ## spread
     if(max_index==2):
         
@@ -673,8 +681,7 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         sorta=numpy.argsort(cum_cases)
 
         selected_names=names[sorta][:5]
-        glob_last_best_spread=show_best_button_spread
-
+        
     if(max_index==3):
    
         ## show_worst_button has been pressed
@@ -691,54 +698,55 @@ def update_selection(show_best_button, show_worst_button, show_best_button_sprea
         sorta=numpy.argsort(cum_cases)
 
         selected_names=names[sorta][-5:]
-        glob_last_worst_spread=show_worst_button_spread
-    """
-    =======
-            ## spread
-            if(max_index==2):
-                
-                ## show best button has been pressed
-               
-                names=[]
-                cum_cases=[]
+    
+    if(max_index==4):
+    
+        ## show best button has been pressed
+       
+        names=[]
+        days_to_double=[]
+        cum_cases=[]
 
-                for key in global_data.keys():
-                    names.append(key)
-                    cum_cases.append(global_data[key]["active_confirmed"][-1])
+        for key in global_data.keys():
+            names.append(key)
+            days_to_double.append(global_data[key]["died_days_to_double"][-1])
+            cum_cases.append(global_data[key]["total_died"][-1])
 
-                
-                names=numpy.array(names)
-                cum_cases=numpy.array(cum_cases)
-               
-                sorta=numpy.argsort(cum_cases)
+        days_to_double=numpy.array(days_to_double)
+        names=numpy.array(names)
+        cum_cases=numpy.array(cum_cases)
 
-                selected_names=names[sorta][:5]
-                glob_last_best_spread=show_best_button_spread
+       
+        sel_mask=(cum_cases > died_req) #numpy.isfinite(days_to_double) & 
 
-            if(max_index==3):
-           
-                ## show_worst_button has been pressed
-               
-                names=[]
-                cum_cases=[]
+        sorta=numpy.argsort(days_to_double[sel_mask])
 
-                for key in global_data.keys():
-                    names.append(key)
-                    cum_cases.append(global_data[key]["active_confirmed"][-1])
+        selected_names=names[sel_mask][sorta][-5:][::-1]
 
-                names=numpy.array(names)
-                cum_cases=numpy.array(cum_cases)
-                sorta=numpy.argsort(cum_cases)
+    if(max_index==5):
+   
+        ## worst died_to_double
+       
+        names=[]
+        mean_r0=[]
+        days_to_double=[]
+        cum_cases=[]
 
-                selected_names=names[sorta][-5:]
-                glob_last_worst_spread=show_worst_button_spread
+        for key in global_data.keys():
+            names.append(key)
+            days_to_double.append(global_data[key]["died_days_to_double"][-1])
+            cum_cases.append(global_data[key]["total_died"][-1])
 
+        days_to_double=numpy.array(days_to_double)
+        names=numpy.array(names)
+        cum_cases=numpy.array(cum_cases)
 
+        sel_mask= (cum_cases > died_req) 
 
-
-            return selected_names
-    >>>>>>> 4659ab63f62e74a04e1a5544eee5336473c0c30e
-    """
+        sorta=numpy.argsort(days_to_double[sel_mask])
+      
+        selected_names=names[sel_mask][sorta][:5]
+        
 
 
     return selected_names
