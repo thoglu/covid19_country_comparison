@@ -259,9 +259,6 @@ def load_data_daily_reports(timeseries_folder="timeseries/csse_covid_19_data/css
         if(n in all_country_names):
             all_country_names.remove(n)
 
-
-
-
     for file in sorted_reports:
         print("..reading ", file)
         all=pd.read_csv(file)
@@ -348,6 +345,16 @@ def load_data_daily_reports(timeseries_folder="timeseries/csse_covid_19_data/css
         all_data[this_country]["total_confirmed"]=numpy.array(all_data[this_country]["total_confirmed"])
         all_data[this_country]["total_recovered"]=numpy.array(all_data[this_country]["total_recovered"])
         all_data[this_country]["total_died"]=numpy.array(all_data[this_country]["total_died"])
+        all_data[this_country]["total_died_per_pop"]=numpy.array(all_data[this_country]["total_died"])/float(population)*global_per_population
+        tot_num=len(all_data[this_country]["total_died"])-1
+        doubling_times=[]
+        for i in range(tot_num):
+
+            doubling_times=[find_doubling_time(all_data[this_country]["total_died"][:-(i+1)])]+doubling_times ## exclude last day which might be faulty
+        
+        all_data[this_country]["died_days_to_double"]=numpy.array(doubling_times)
+
+
         all_data[this_country]["total_active"]=all_data[this_country]["total_confirmed"]-all_data[this_country]["total_recovered"]-all_data[this_country]["total_died"]
 
         """
@@ -441,7 +448,7 @@ for k in sorted(global_data.keys()):
 
 
 def get_layout():
-    return  html.Div( style={"max-width": 800}, children=[
+    return  html.Div( style={"max-width": 1024}, children=[
             html.H1(children='Covid-19 visualization', style={
                 'textAlign': 'center',
                 'color': app_colors['text']
@@ -495,7 +502,10 @@ def get_layout():
         value=['log',"no"]
         ) 
          ]),
-
+             html.H3(children='Active cases over time',style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
             dcc.Graph(
                 id='graph',
                 figure={
@@ -507,7 +517,22 @@ def get_layout():
                         'paper_bgcolor': app_colors['background']   
                 }
             }),
-            html.H3(children='Development of "days to double" over time',style={
+            html.H3(children='Total died over time',style={
+                'textAlign': 'center',
+                'color': app_colors['text']
+            }),
+            dcc.Graph(
+                id='graph3',
+                figure={
+                    'data': [
+                    ],
+                    'layout': {
+                        'title': 'Days to double over time',
+                        'plot_bgcolor': app_colors['background'],
+                        'paper_bgcolor': app_colors['background']   
+                }
+            }),
+            html.H3(children='Development of "days to double" (active cases) over time',style={
                 'textAlign': 'center',
                 'color': app_colors['text']
             }),
@@ -521,7 +546,8 @@ def get_layout():
                         'plot_bgcolor': app_colors['background'],
                         'paper_bgcolor': app_colors['background']   
                 }
-            })
+            }),
+            
         ])
 
 
@@ -816,6 +842,47 @@ def update_figure2(selected_input_dropdown, checkpoints_input):#
         )
     }
 
+
+@app.callback(
+Output('graph3', 'figure'),
+[Input('dropdown_selection', 'value'), Input('checkpoints', 'value')])
+def update_figure3(selected_input_dropdown, checkpoints_input):#
+    
+    global app_colors, global_data, dates
+
+    data_list=[]
+
+    colors=["red", "green", "blue", "purple", "gray", "brown", "orange", "pink", "black", "yellow"]
+
+    log_opt="linear"
+    
+    if("log" in checkpoints_input):
+        log_opt="log"
+
+
+    for ind, inp in enumerate(selected_input_dropdown):
+
+        data_list.append(dict(
+            x=dates[:-1],
+            y=global_data[inp]["total_died_per_pop"],
+            line=dict(color=colors[ind], width=4
+                          ),
+            name="%s (days to double tot deaths: %.1f)" % (inp, global_data[inp]["died_days_to_double"][-1])
+            ) )
+     
+    return {
+        'data': data_list,
+        'layout': dict(
+            xaxis={'title': 'date'},
+            yaxis={"type": log_opt, 'title': '# per %s population' % str(global_per_population)},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            legend={'x': 0.02, 'y': 0.98},
+            hovermode='closest',
+            title='',
+            plot_bgcolor= app_colors['background'],
+            paper_bgcolor=app_colors['background']
+        )
+    }
 
 
 
